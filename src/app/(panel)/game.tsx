@@ -50,6 +50,25 @@ const LABEL: Record<VillageState, string> = { idle: "libre", working: "trabajand
 export const TONE: Record<VillageState, string> = { idle: "var(--av-idle)", working: "var(--av-work)", moving: "var(--av-work)", blocked: "var(--av-stuck)", waiting_approval: "var(--av-wait)", sleeping: "var(--av-sleep)" };
 export const eta = (ms: number | null) => (ms == null ? null : ms < 60_000 ? `~${Math.max(1, Math.round(ms / 1000))}s` : `~${Math.round(ms / 60_000)}min`);
 
+/** Tiempo estimado que baja solo en pantalla (2026-11-16). Antes la página entera se volvía a pedir cada 5 s para
+ *  actualizarlo y eso frenaba la casa; ahora solo se redibuja este texto. Cada dato nuevo del servidor lo reinicia. */
+export function Eta({ ms, prefix = "" }: { ms: number | null; prefix?: string }) {
+  const [seen, setSeen] = useState(ms);
+  const [elapsed, setElapsed] = useState(0);
+  if (seen !== ms) {
+    setSeen(ms);
+    setElapsed(0);
+  }
+  useEffect(() => {
+    if (ms == null) return;
+    const start = performance.now();
+    const t = setInterval(() => setElapsed(performance.now() - start), 1000);
+    return () => clearInterval(t);
+  }, [ms]);
+  const text = eta(ms == null ? null : Math.max(0, ms - elapsed));
+  return text ? <>{prefix}{text}</> : null;
+}
+
 /** Los menús: cada uno agrupa pantallas (pestañas) y tiene su objeto en la casa. */
 const SECTIONS: { id: Menu | "ajustes" | "skins"; label: string; href: string; tabs: [string, string][]; wide?: boolean }[] = [
   { id: "bandeja", label: "Bandeja", href: "/bandeja", tabs: [["/bandeja", "Bandeja"]] },
@@ -208,7 +227,7 @@ export function GameClient(p: {
                         <b style={{ width: `${Math.round(a.progress * 100)}%` }} />
                       </span>
                     )}
-                    {eta(a.etaMs) && <span className="hud-muted">{eta(a.etaMs)}</span>}
+                    {a.etaMs != null && <span className="hud-muted"><Eta ms={a.etaMs} /></span>}
                   </>
                 ) : (
                   LABEL[a.state]

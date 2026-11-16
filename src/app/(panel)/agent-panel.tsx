@@ -9,7 +9,7 @@ import { useEffect, useRef } from "react";
 import type { DeskSlot } from "@/village/office/layout";
 import type { VillageState } from "@/village/state";
 import { equipSkill } from "./actions";
-import { eta, TONE, useGame, type InventorySkill, type OfficeAgent } from "./game";
+import { Eta, TONE, useGame, type InventorySkill, type OfficeAgent } from "./game";
 
 const STATE: Record<VillageState, string> = {
   idle: "Libre",
@@ -75,7 +75,8 @@ export function AgentPanel(p: {
           {agent.task && (
             <p>
               {agent.task}
-              {agent.state === "working" && ` · ${agent.stepLabel ?? "arrancando"}${agent.etaMs != null ? ` · faltan ${eta(agent.etaMs)}` : ""}`}
+              {agent.state === "working" && ` · ${agent.stepLabel ?? "arrancando"}`}
+              {agent.state === "working" && <Eta ms={agent.etaMs} prefix=" · faltan " />}
             </p>
           )}
           {agent.state === "working" && agent.progress != null && (

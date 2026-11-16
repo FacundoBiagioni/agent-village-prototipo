@@ -17,12 +17,9 @@ export function LiveRefresh() {
       clearTimeout(t);
       t = setTimeout(() => router.refresh(), 150);
     };
-    // PROTOTIPO: el original recalcula cada 5 s mientras algo trabaja; acá los datos son fijos, así que no hace falta.
-    const tick = undefined;
     return () => {
       es.close();
       clearTimeout(t);
-      clearInterval(tick);
     };
   }, [router]);
 
