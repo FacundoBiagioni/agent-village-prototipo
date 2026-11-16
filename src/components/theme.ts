@@ -5,4 +5,5 @@ export const THEME_KEY = "panel-theme";
 export const THEME_ATTR = "data-panel-theme";
 
 // Va en el <head> del layout raíz (React no lo vuelve a armar al navegar): aplica el modo antes de pintar.
-export const THEME_SCRIPT = `try{if(localStorage.getItem("${THEME_KEY}")==="dark")document.documentElement.setAttribute("${THEME_ATTR}","dark")}catch(e){}`;
+// Oscuro por defecto (usuario, 2026-11-16): claro solo si se eligió con el botón.
+export const THEME_SCRIPT = `try{if(localStorage.getItem("${THEME_KEY}")!=="light")document.documentElement.setAttribute("${THEME_ATTR}","dark")}catch(e){}`;
