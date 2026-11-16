@@ -1,0 +1,251 @@
+@import "tailwindcss";
+
+/* ── Agent Village: estilo "juego de oficina" (rediseño 2026-11-07) ──────────────────────────────
+   El panel es el HUD de la oficina: paneles con contorno de tinta y sombra dura, títulos pixelados (Pixelify Sans),
+   texto en Rubik y los mismos colores de estado que la escena 3D. Todo vive dentro de #panel: las demos no se tocan.
+   De noche (<html data-panel-theme="dark">) cambian solo las variables. */
+#panel {
+  --av-ink: #241e3b; /* tinta: texto y contornos */
+  --av-floor: #d9e0ec; /* piso de la oficina (fondo) */
+  --av-grid: #cdd5e4; /* grilla de plano sobre el piso */
+  --av-card: #fafbfe; /* paneles */
+  --av-sunk: #eef1f8; /* zonas hundidas dentro de un panel */
+  --av-muted: #5d5878; /* texto secundario */
+  --av-coin: #ffc93c; /* acento de acción (amarillo moneda) */
+  --av-coin-ink: #241e3b;
+  /* Estados: los mismos que la oficina 3D (scene.ts). */
+  --av-work: #2fa58f;
+  --av-wait: #f0a43a;
+  --av-stuck: #e5534b;
+  --av-sleep: #8c84c9;
+  --av-idle: #9a97ad;
+  --av-shadow: 3px 3px 0 var(--av-ink);
+
+  /* Las pantallas viejas usan la paleta "stone" de Tailwind: se apunta a la nueva para que todo tome el estilo de una vez. */
+  --color-white: var(--av-card);
+  --color-stone-50: var(--av-floor);
+  --color-stone-100: var(--av-sunk);
+  --color-stone-200: #c9cfdf;
+  --color-stone-300: #a9b0c6;
+  --color-stone-400: #8a87a3;
+  --color-stone-500: var(--av-muted);
+  --color-stone-600: #4a4566;
+  --color-stone-700: #3a3456;
+  --color-stone-800: #2e2848;
+  --color-stone-900: var(--av-ink);
+  --color-emerald-50: #e3f5f0;
+  --color-emerald-100: #c8ebe2;
+  --color-emerald-500: var(--av-work);
+  --color-emerald-700: #1d7a68;
+  --color-emerald-800: #16604f;
+  --color-amber-50: #fdf1dc;
+  --color-amber-100: #fbe2b5;
+  --color-amber-200: #f6cd85;
+  --color-amber-700: #a2620d;
+  --color-amber-800: #82500c;
+  --color-amber-900: #5f3a08;
+  --color-red-50: #fce9e8;
+  --color-red-500: var(--av-stuck);
+  --color-red-700: #b4332c;
+  --color-red-800: #8f2923;
+  --color-sky-50: #e6eefc;
+  --color-sky-100: #d3e1fa;
+  --color-sky-700: #3557a8;
+  --color-sky-800: #2b468a;
+
+  color-scheme: light;
+  background-color: var(--av-floor);
+  background-image:
+    linear-gradient(var(--av-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--av-grid) 1px, transparent 1px);
+  background-size: 32px 32px;
+  color: var(--av-ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+[data-panel-theme="dark"] #panel {
+  --av-ink: #edeaf7;
+  --av-line: #0d0b1c; /* de noche el contorno es más oscuro que el panel, no igual al texto */
+  --av-floor: #1a1730;
+  --av-grid: #221e3c;
+  --av-card: #29244a;
+  --av-sunk: #211d3d;
+  --av-muted: #aaa4c8;
+  --av-coin-ink: #241e3b;
+  --av-shadow: 3px 3px 0 var(--av-line);
+
+  --color-stone-200: #3b3560;
+  --color-stone-300: #4d4677;
+  --color-stone-400: #7d76a3;
+  --color-stone-600: #cfcae6;
+  --color-stone-700: #dcd8ee;
+  --color-stone-800: #e6e3f3;
+  --color-emerald-50: #173a37;
+  --color-emerald-100: #1d4a45;
+  --color-emerald-700: #7fdcc6;
+  --color-emerald-800: #a6ead9;
+  --color-amber-50: #3d2c14;
+  --color-amber-100: #523a17;
+  --color-amber-200: #6b4b1c;
+  --color-amber-700: #f6c46f;
+  --color-amber-800: #f9d48f;
+  --color-amber-900: #fce3b3;
+  --color-red-50: #45201f;
+  --color-red-700: #f3a29d;
+  --color-red-800: #f7bcb8;
+  --color-sky-50: #1d2a4d;
+  --color-sky-100: #24345e;
+  --color-sky-700: #a9c1f3;
+  --color-sky-800: #c3d4f7;
+  color-scheme: dark;
+}
+
+/* Contorno: de día es la tinta; de noche, un índigo casi negro. */
+#panel {
+  --av-line: var(--av-ink);
+}
+
+/* Títulos pixelados. */
+#panel h1,
+#panel h2,
+#panel .av-title {
+  font-family: var(--font-pixel), var(--font-body), sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Las tarjetas viejas (borde + sombra suave) pasan a ser paneles del juego.
+   shortcut: se apoya en las clases que ya usan las pantallas; al rediseñar cada pantalla se pasa a .av-panel. */
+#panel .shadow-sm {
+  border-width: 2px;
+  border-color: var(--av-line);
+  box-shadow: var(--av-shadow);
+}
+/* Botón principal viejo (fondo tinta) → botón moneda. */
+#panel button.bg-stone-900,
+#panel a.bg-stone-900 {
+  background-color: var(--av-coin);
+  color: var(--av-coin-ink);
+  border: 2px solid var(--av-line);
+  box-shadow: 2px 2px 0 var(--av-line);
+  font-weight: 600;
+}
+#panel button.bg-stone-900:hover,
+#panel a.bg-stone-900:hover {
+  filter: brightness(1.05);
+}
+#panel button.bg-stone-900:active,
+#panel a.bg-stone-900:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* Campos de formulario: contorno marcado y fondo de panel. */
+#panel input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="file"]),
+#panel select,
+#panel textarea {
+  border: 2px solid color-mix(in oklab, var(--av-line) 45%, transparent);
+  border-radius: 8px;
+  background-color: var(--av-card);
+}
+#panel input:not([type="checkbox"], [type="radio"]):focus-visible,
+#panel select:focus-visible,
+#panel textarea:focus-visible {
+  border-color: var(--av-line);
+}
+#panel input[type="checkbox"],
+#panel input[type="radio"] {
+  accent-color: var(--av-work);
+}
+/* "Elegir archivos" (subir fotos) con el mismo botón del juego. */
+#panel input[type="file"]::file-selector-button {
+  margin-right: 0.75rem;
+  padding: 0.35rem 0.9rem;
+  border: 2px solid var(--av-line);
+  border-radius: 8px;
+  background-color: var(--av-card);
+  color: var(--av-ink);
+  font: inherit;
+  font-weight: 600;
+  box-shadow: 2px 2px 0 var(--av-line);
+  cursor: pointer;
+}
+/* Botón secundario viejo (borde gris) → botón del juego. */
+#panel button.border-stone-300 {
+  border: 2px solid var(--av-line);
+  box-shadow: 2px 2px 0 var(--av-line);
+  font-weight: 500;
+}
+#panel button.border-stone-300:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* Piezas del juego para las pantallas nuevas. */
+@utility av-panel {
+  background-color: var(--av-card);
+  border: 2px solid var(--av-line);
+  border-radius: 10px;
+  box-shadow: var(--av-shadow);
+}
+@utility av-sunk {
+  background-color: var(--av-sunk);
+  border: 2px solid color-mix(in oklab, var(--av-line) 25%, transparent);
+  border-radius: 8px;
+}
+@utility av-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.9rem;
+  border: 2px solid var(--av-line);
+  border-radius: 8px;
+  background-color: var(--av-card);
+  color: var(--av-ink);
+  font-weight: 600;
+  box-shadow: 2px 2px 0 var(--av-line);
+  &:hover {
+    background-color: var(--av-sunk);
+  }
+  &:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+  }
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    transform: none;
+  }
+}
+@utility av-btn-coin {
+  background-color: var(--av-coin);
+  color: var(--av-coin-ink);
+  &:hover {
+    background-color: var(--av-coin);
+    filter: brightness(1.05);
+  }
+}
+
+/* Foco visible y del color del acento en todo el panel. */
+#panel :focus-visible {
+  outline: 3px solid var(--av-coin);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #panel *,
+  #panel *::before,
+  #panel *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Desplegables del panel: fondo y texto propios. Sin esto, el navegador abría la lista oscura con texto oscuro (2026-11-05). */
+#panel select,
+#panel option {
+  background-color: var(--av-card);
+  color: var(--av-ink);
+}

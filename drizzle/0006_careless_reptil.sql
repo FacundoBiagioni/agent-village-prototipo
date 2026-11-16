@@ -1,0 +1,1 @@
+ALTER TABLE "messages" ADD COLUMN "replied_at" timestamp with time zone;

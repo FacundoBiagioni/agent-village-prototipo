@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Ruta del día</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<meta name="theme-color" content="#1c1917">
+<!-- Modo Visita (PLAN 10). Página sola, sin React ni Next: así abre siempre sin internet.
+     La ruta y las visitas viven en el celular (localStorage); se bajan y se suben por /api/visita con tu sesión. -->
+<style>
+  :root { --bg:#fafaf9; --card:#fff; --ink:#1c1917; --muted:#57534e; --line:#d6d3d1; --ok:#059669; --okbg:#d1fae5; --info:#e0f2fe; --infoink:#0c4a6e; color-scheme: light dark; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0c0a09; --card:#1c1917; --ink:#fafaf9; --muted:#a8a29e; --line:#44403c; --okbg:#064e3b; --info:#0c4a6e; --infoink:#e0f2fe; } }
+  * { box-sizing: border-box; }
+  body { margin:0; font:16px/1.45 system-ui, sans-serif; background:var(--bg); color:var(--ink); }
+  main { max-width:36rem; margin:0 auto; padding:1rem; }
+  h1 { font-size:1.5rem; margin:.25rem 0 1rem; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem; margin-bottom:.75rem; }
+  .done { border-color:var(--ok); }
+  .row { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
+  .muted { color:var(--muted); font-size:.85rem; }
+  button, .btn { font:inherit; font-size:.95rem; border-radius:8px; padding:.6rem .8rem; border:1px solid var(--line); background:var(--card); color:var(--ink); text-decoration:none; cursor:pointer; min-height:44px; }
+  .dark { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+  .green { background:var(--ok); color:#fff; border-color:var(--ok); }
+  textarea, select, input { font:inherit; border:1px solid var(--line); border-radius:8px; padding:.5rem; background:var(--card); color:var(--ink); }
+  textarea { width:100%; margin:.75rem 0 .5rem; }
+  .status { background:var(--info); color:var(--infoink); border-radius:8px; padding:.75rem; margin-bottom:.75rem; }
+  .tag { background:var(--okbg); border-radius:999px; padding:.1rem .6rem; font-size:.8rem; }
+  h2 { font-size:1.05rem; margin:0; }
+</style>
+</head>
+<body>
+<main>
+  <div class="row" style="justify-content:space-between">
+    <h1>Ruta del día</h1>
+    <a class="btn" href="/">Panel</a>
+  </div>
+  <div class="card">
+    <div class="row">
+      <label>Negocios <select id="count"><option>5</option><option selected>10</option><option>15</option></select></label>
+      <button id="download" class="dark">Bajar ruta del día</button>
+      <button id="sync" hidden></button>
+    </div>
+    <p class="muted">Bajala con el Wi-Fi de tu casa: guarda la ruta y las demos para usarlas en la calle sin internet. Si das permiso de ubicación, arranca desde donde estás. Lo que anotes se sube solo cuando vuelvas al Wi-Fi.</p>
+  </div>
+  <p id="status" class="status" role="status" hidden></p>
+  <p id="when" class="muted"></p>
+  <ol id="stops" style="padding:0;list-style:none"></ol>
+</main>
+<script>
+const LABEL = { interested: "Le interesó", come_back: "Volver otro día", not_interested: "No le interesa" };
+const get = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { alert("No se pudo guardar en el celular (¿ventana privada?)."); } };
+const $ = (id) => document.getElementById(id);
+const say = (msg) => { $("status").hidden = !msg; $("status").textContent = msg || ""; };
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+function render() {
+  const route = get("visita-route", null), done = get("visita-done", {}), queue = get("visita-queue", []);
+  $("sync").hidden = !queue.length;
+  $("sync").textContent = `Subir ${queue.length} visita(s) pendientes`;
+  $("download").textContent = route ? "Bajar ruta nueva" : "Bajar ruta del día";
+  $("when").textContent = route ? `Ruta bajada el ${new Date(route.createdAt).toLocaleString("es-AR")}.` : "";
+  // Lo que se está escribiendo en otras paradas (notas, día para volver, "no contactar") sobrevive al redibujar la lista.
+  const typing = {};
+  for (const li of $("stops").querySelectorAll("li[data-lead]")) {
+    typing[li.dataset.lead] = [li.querySelector("textarea").value, li.querySelector("input[type=date]").value, li.querySelector("input[type=checkbox]").checked];
+  }
+  $("stops").innerHTML = (route?.stops ?? []).map((s, i) => `
+    <li class="card ${done[s.leadId] ? "done" : ""}" data-i="${i}" data-lead="${esc(s.leadId)}">
+      <div class="row" style="justify-content:space-between"><h2>${i + 1}. ${esc(s.name)}</h2>${done[s.leadId] ? `<span class="tag">${LABEL[done[s.leadId]]}</span>` : ""}</div>
+      ${s.address ? `<div class="muted">${esc(s.address)}</div>` : ""}
+      ${s.lastVisit ? `<div class="muted">Última visita: ${esc(LABEL[s.lastVisit.result] ?? s.lastVisit.result)}${s.lastVisit.note ? ` (${esc(s.lastVisit.note)})` : ""}</div>` : ""}
+      <div class="row" style="margin-top:.75rem">
+        <a class="btn dark" href="${esc(s.demoUrl)}">Ver demo</a>
+        <a class="btn" href="${esc(s.mapsUrl)}" target="_blank" rel="noopener">Cómo llegar</a>
+        ${s.phone ? `<a class="btn" href="tel:${esc(s.phone.replace(/[^\d+]/g, ""))}">Llamar</a>` : ""}
+      </div>
+      <textarea rows="2" placeholder="Notas de la visita"></textarea>
+      <div class="row">
+        <button class="green" data-r="interested">${LABEL.interested}</button>
+        <span class="row"><button data-r="come_back">${LABEL.come_back}</button><input type="date" aria-label="Día para volver"></span>
+        <span class="row"><button data-r="not_interested">${LABEL.not_interested}</button><label class="muted"><input type="checkbox"> no contactar más</label></span>
+      </div>
+    </li>`).join("");
+  for (const li of $("stops").querySelectorAll("li[data-lead]")) {
+    const t = typing[li.dataset.lead];
+    if (!t) continue;
+    [li.querySelector("textarea").value, li.querySelector("input[type=date]").value, li.querySelector("input[type=checkbox]").checked] = t;
+  }
+}
+
+async function sync() {
+  const pending = get("visita-queue", []);
+  if (!pending.length) return;
+  try {
+    const r = await fetch("/api/visita/sync", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ visits: pending }) });
+    if (r.status === 401) return say("Tu sesión venció: entrá al panel con tu contraseña y volvé acá para subir las visitas.");
+    if (!r.ok) return say(`No se pudieron subir las visitas (error ${r.status}). Quedan guardadas en el celular.`);
+    const { accepted, rejected } = await r.json();
+    put("visita-queue", get("visita-queue", []).filter((v) => !accepted.includes(v.clientId)));
+    say(`Subidas ${accepted.length} visita(s) a la PC${rejected ? `; ${rejected} con datos inválidos quedaron en el celular` : ""}.`);
+  } catch {
+    say(`Sin conexión con la PC: ${pending.length} visita(s) guardadas en el celular. Se suben solas al volver al Wi-Fi de casa.`);
+  }
+  render();
+}
+
+async function download() {
+  $("download").disabled = true;
+  try {
+    const pos = await new Promise((ok) => navigator.geolocation ? navigator.geolocation.getCurrentPosition(ok, () => ok(null), { timeout: 8000 }) : ok(null));
+    const where = pos ? `&lat=${pos.coords.latitude}&lng=${pos.coords.longitude}` : "";
+    const r = await fetch(`/api/visita/ruta?n=${$("count").value}${where}`);
+    if (r.status === 401) return say("Tu sesión venció: entrá al panel con tu contraseña y volvé acá.");
+    if (!r.ok) return say(`No se pudo bajar la ruta (error ${r.status}).`);
+    const route = await r.json();
+    put("visita-route", route);
+    put("visita-done", {});
+    render();
+    // Cada demo se abre una vez en un marco invisible: el service worker guarda la página, sus estilos, tipografías y fotos.
+    for (const [i, s] of route.stops.entries()) {
+      say(`Guardando demos para usar sin internet: ${i + 1} de ${route.stops.length}…`);
+      await new Promise((ok) => {
+        const f = document.createElement("iframe");
+        f.hidden = true;
+        f.src = s.demoUrl;
+        const end = () => { f.remove(); ok(); };
+        f.onload = () => setTimeout(end, 1500);
+        setTimeout(end, 15000);
+        document.body.append(f);
+      });
+    }
+    say(route.stops.length ? `Ruta lista: ${route.stops.length} negocio(s), guardada para usar sin internet.` : "No hay negocios con demo vigente para visitar.");
+  } catch {
+    say("Sin conexión con la PC: la ruta se baja desde el Wi-Fi de tu casa.");
+  } finally {
+    $("download").disabled = false;
+  }
+}
+
+$("stops").addEventListener("click", (e) => {
+  const result = e.target.closest("button[data-r]")?.dataset.r;
+  if (!result) return;
+  const li = e.target.closest("li"), stop = get("visita-route", null).stops[li.dataset.i];
+  // Un segundo toque (o cambiar de idea) sería otra visita: cuenta doble en las métricas y mueve la etapa del negocio.
+  const before = get("visita-done", {})[stop.leadId];
+  if (before && !confirm(`Ya anotaste "${LABEL[before]}" para ${stop.name}. ¿Anotar otra visita?`)) return;
+  const visit = {
+    clientId: `v-${crypto.randomUUID()}`,
+    leadId: stop.leadId,
+    demoId: stop.demoId,
+    result,
+    note: li.querySelector("textarea").value.trim() || null,
+    comeBackOn: result === "come_back" ? li.querySelector("input[type=date]").value || null : null,
+    doNotContact: result === "not_interested" && li.querySelector("input[type=checkbox]").checked,
+    visitedAt: new Date().toISOString(),
+  };
+  put("visita-queue", [...get("visita-queue", []), visit]);
+  put("visita-done", { ...get("visita-done", {}), [stop.leadId]: result });
+  // Lo de esta parada ya quedó en la visita: se limpia para que no se repita en la próxima.
+  li.querySelector("textarea").value = "";
+  li.querySelector("input[type=date]").value = "";
+  li.querySelector("input[type=checkbox]").checked = false;
+  render();
+  sync();
+});
+$("download").addEventListener("click", download);
+$("sync").addEventListener("click", sync);
+window.addEventListener("online", sync);
+navigator.serviceWorker?.register("/sw.js").catch(() => {});
+render();
+sync();
+</script>
+</body>
+</html>

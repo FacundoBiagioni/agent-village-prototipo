@@ -1,0 +1,1753 @@
+/* HUD de la casa (reforma 2026-11-10). Usa los colores del panel (--av-*, globals.css): mismo estilo "juego de oficina".
+   El modo ASCII (.hud[data-ascii]) cambia solo variables y unos pocos detalles. */
+
+.hud-root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+.hud-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+  color: var(--av-muted);
+}
+.hud {
+  --hud-line: var(--av-line);
+  --hud-shadow: var(--av-shadow);
+  --hud-r: 12px;
+  position: absolute;
+  inset: 0;
+  font-size: 14px;
+}
+.hud-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+  background: #2a2f3c;
+}
+.hud-canvas:active {
+  cursor: grabbing;
+}
+.hud-muted {
+  color: var(--av-muted);
+}
+.hud :where(button, a) {
+  cursor: pointer;
+}
+
+/* ── Piezas comunes ── */
+.hud-top,
+.hud-dock,
+.hud-side > div,
+.hud-pop,
+.hud-win,
+.hud-agent,
+.hud-hint,
+.hud-error {
+  background: var(--av-card);
+  color: var(--av-ink);
+  border: 2px solid var(--hud-line);
+  border-radius: var(--hud-r);
+  box-shadow: var(--hud-shadow);
+}
+.hud-ico {
+  display: inline-grid;
+  place-items: center;
+  line-height: 0;
+}
+.hud-ti {
+  display: none;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+.hud-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: 99px;
+  border: 2px solid var(--hud-line);
+  background: var(--av-stuck);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  animation: hud-pulse 2.4s ease-in-out infinite;
+}
+@keyframes hud-pulse {
+  0%,
+  88%,
+  100% {
+    transform: scale(1);
+  }
+  94% {
+    transform: scale(1.22);
+  }
+}
+.hud-bar {
+  display: inline-block;
+  width: 44px;
+  height: 8px;
+  overflow: hidden;
+  border: 2px solid var(--hud-line);
+  border-radius: 4px;
+  background: var(--av-sunk);
+  vertical-align: middle;
+}
+.hud-bar b {
+  display: block;
+  height: 100%;
+  background: var(--av-work);
+}
+.hud-bar-big {
+  width: 100%;
+  height: 12px;
+}
+.hud-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--av-muted);
+  text-decoration: underline;
+  font-size: 13px;
+  text-align: left;
+}
+.hud-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Carteles sobre la casa ── */
+.hud-labels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.hud-labels > * {
+  position: absolute;
+  left: 0;
+  top: 0;
+  visibility: hidden;
+  pointer-events: auto;
+}
+.hud-tag {
+  padding: 2px 7px 3px;
+  border: 2px solid var(--hud-line);
+  border-radius: 8px;
+  background: var(--av-card);
+  color: var(--av-ink);
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: nowrap;
+  text-align: left;
+  opacity: 0.88;
+}
+.hud-tag[data-active] {
+  opacity: 1;
+  box-shadow: 2px 2px 0 var(--hud-line);
+}
+.hud-tag .av-title {
+  font-size: 12px;
+}
+.hud-tag-state {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.hud-tag-state i,
+.hud-state i,
+.hud-face > i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.hud-tag-step {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@keyframes hud-bob {
+  50% {
+    transform: translateY(-2px);
+  }
+}
+.hud-free {
+  padding: 3px 10px;
+  border: 2px solid var(--hud-line);
+  border-radius: 99px;
+  background: var(--av-coin);
+  color: var(--av-coin-ink);
+  font-weight: 700;
+  font-size: 12px;
+  box-shadow: 0 3px 0 var(--hud-line);
+  animation: hud-bob 1.2s ease-in-out infinite;
+}
+
+/* ── Barra de arriba ── */
+.hud-top {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 10px;
+}
+.hud-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 19px;
+  white-space: nowrap;
+}
+.hud-logo {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--hud-line);
+  border-radius: 9px;
+  background: var(--av-coin);
+  box-shadow: 2px 2px 0 var(--hud-line);
+}
+.hud-faces {
+  display: flex;
+  flex: 1;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px;
+}
+.hud-face {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 62px;
+  padding: 3px 5px 2px;
+  border: 2px solid var(--hud-line);
+  border-radius: 9px;
+  background: var(--av-sunk);
+  color: var(--av-ink);
+  font-size: 11px;
+  line-height: 1.1;
+}
+.hud-face-pic {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 40px;
+  font-family: var(--font-pixel), sans-serif;
+  font-size: 17px;
+  color: var(--av-muted);
+}
+.hud-face-pic img {
+  width: 48px;
+  height: 48px;
+  max-width: none;
+  margin-top: -6px;
+  image-rendering: pixelated;
+}
+.hud-face > i {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--hud-line);
+}
+.hud-face:is(button):hover,
+.hud-face[aria-pressed="true"] {
+  background: var(--av-coin);
+  color: var(--av-coin-ink);
+  box-shadow: 2px 2px 0 var(--hud-line);
+}
+.hud-face-free {
+  border-style: dashed;
+  opacity: 0.75;
+}
+.hud-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hud-energy {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+.hud-blocks {
+  display: grid;
+  grid-template-columns: repeat(10, 8px);
+  gap: 2px;
+}
+.hud-blocks i {
+  height: 14px;
+  border: 1.5px solid var(--hud-line);
+  border-radius: 2px;
+  background: var(--av-sunk);
+}
+.hud-prod {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px 4px 5px;
+  border: 2px solid var(--hud-line);
+  border-radius: 99px;
+  background: var(--av-sunk);
+  color: var(--av-ink);
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.1;
+  text-align: left;
+}
+.hud-prod small {
+  display: block;
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--av-muted);
+}
+.hud-prod i {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  border: 2px solid var(--hud-line);
+  border-radius: 99px;
+  background: var(--av-card);
+}
+.hud-prod i::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--av-idle);
+  transition: left 0.15s;
+}
+.hud-prod[aria-pressed="true"] {
+  background: color-mix(in oklab, var(--av-work) 25%, var(--av-card));
+}
+.hud-prod[aria-pressed="true"] i::after {
+  left: 16px;
+  background: var(--av-work);
+}
+.hud-prod:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.hud-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.05;
+}
+.hud-clock b {
+  font-family: var(--font-pixel), sans-serif;
+  font-size: 20px;
+}
+.hud-clock small {
+  font-size: 11px;
+  color: var(--av-muted);
+}
+.hud-tools {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.hud-tools [role="status"] {
+  font-size: 0; /* "En vivo": acá alcanza con el puntito */
+  gap: 0;
+}
+.hud-tool {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 2px solid var(--hud-line);
+  border-radius: 10px;
+  background: var(--av-sunk);
+  color: var(--av-ink);
+  box-shadow: 2px 2px 0 var(--hud-line);
+}
+.hud-tool:hover,
+.hud-tool[aria-expanded="true"] {
+  background: var(--av-coin);
+}
+.hud-tool:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* ── Desplegables ── */
+.hud-pop {
+  position: absolute;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  max-height: calc(100% - 200px);
+  overflow: auto;
+}
+.hud-pop h3 {
+  font-size: 17px;
+}
+.hud-notices,
+.hud-search {
+  top: 76px;
+  right: 10px;
+  width: min(380px, calc(100% - 20px));
+}
+.hud-search input {
+  width: 100%;
+  padding: 8px 10px;
+}
+.hud-notice {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 9px;
+  border: 2px solid color-mix(in oklab, var(--hud-line) 30%, transparent);
+  border-radius: 8px;
+  background: var(--av-sunk);
+  color: var(--av-ink);
+  text-align: left;
+  font-size: 13px;
+}
+.hud-notice:hover {
+  border-color: var(--hud-line);
+}
+.hud-notice > span {
+  flex: 1;
+  min-width: 0;
+}
+.hud-notice small {
+  display: block;
+  color: var(--av-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hud-notice em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--av-muted);
+  white-space: nowrap;
+}
+.hud-notice i {
+  flex: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid var(--hud-line);
+  background: var(--av-idle);
+}
+.hud-notice i[data-tone="wait"] {
+  background: var(--av-wait);
+}
+.hud-notice i[data-tone="stuck"] {
+  background: var(--av-stuck);
+}
+.hud-notice i[data-tone="info"] {
+  background: var(--av-sleep);
+}
+.hud-notice i[data-tone="work"] {
+  background: var(--av-work);
+}
+.hud-basements {
+  left: 70px;
+  bottom: 110px;
+  width: min(360px, calc(100% - 90px));
+}
+.hud-variant {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 2px solid var(--hud-line);
+  border-radius: 8px;
+  background: var(--av-sunk);
+  color: var(--av-ink);
+  text-align: left;
+  box-shadow: 2px 2px 0 var(--hud-line);
+}
+.hud-variant:hover {
+  background: var(--av-coin);
+  color: var(--av-coin-ink);
+}
+.hud-variant small {
+  display: block;
+  font-size: 12px;
+  opacity: 0.8;
+}
+.hud-swatch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  overflow: hidden;
+  border: 2px solid var(--hud-line);
+  border-radius: 6px;
+}
+.hud-swatch i:first-child {
+  grid-column: 1 / 3;
+}
+.hud-hint,
+.hud-error {
+  position: absolute;
+  z-index: 45;
+  left: 50%;
+  bottom: 112px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 14px;
+  max-width: calc(100% - 20px);
+}
+.hud-hint {
+  background: var(--av-coin);
+  color: var(--av-coin-ink);
+  font-weight: 600;
+}
+.hud-hint .hud-link {
+  color: inherit;
+}
+.hud-error {
+  bottom: 160px;
+  background: var(--av-stuck);
+  color: #fff;
+  cursor: pointer;
+}
+
+/* ── Barra de abajo ── */
+.hud-dock {
+  position: absolute;
+  z-index: 20;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  max-width: calc(100% - 20px);
+}
+.hud-dock-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 84px;
+  padding: 7px 4px 5px;
+  border: 2px solid var(--hud-line);
+  border-radius: 10px;
+  background: var(--av-sunk);
+  color: var(--av-ink);
+  font-size: 13px;
+  box-shadow: 0 3px 0 var(--hud-line);
+  transition: transform 0.1s;
+}
+.hud-dock-btn:hover {
+  transform: translateY(-4px);
+}
+.hud-dock-btn[aria-current="page"] {
+  background: var(--av-coin);
+  color: var(--av-coin-ink);
+  transform: translateY(-6px);
+}
+
+/* ── Plantas y vista (abajo a la izquierda) ── */
+.hud-side {
+  position: absolute;
+  z-index: 19;
+  left: 12px;
+  bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hud-side > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 5px;
+}
+.hud-side button {
+  min-width: 42px;
+  height: 32px;
+  padding: 0 4px;
+  border: 2px solid var(--hud-line);
+  border-radius: 7px;
+  background: var(--av-sunk);
+  color: var(--av-ink);
+  font-family: var(--font-pixel), sans-serif;
+  font-size: 15px;
+}
+.hud-side button:hover {
+  background: var(--av-card);
+}
+.hud-side button[aria-pressed="true"],
+.hud-side button[aria-expanded="true"] {
+  background: var(--av-coin);
+  color: var(--av-coin-ink);
+}
+
+/* ── Ventana flotante: la pantalla de cada menú, con la casa atrás ── */
+.hud-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 18; /* sobre la casa y sus carteles, debajo de las barras: el HUD se sigue usando con una ventana abierta */
+  background: color-mix(in oklab, #0d0b1c 30%, transparent);
+  cursor: default;
+}
+.hud-win {
+  position: absolute;
+  z-index: 30;
+  top: 84px;
+  max-height: calc(100% - 190px); /* tan alta como su contenido: si es corto, se ve más casa */
+  left: 50%;
+  width: min(1180px, calc(100% - 150px));
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: hud-pop 0.16s ease-out;
+}
+.hud-win[data-wide] {
+  width: min(1480px, calc(100% - 150px));
+}
+@keyframes hud-pop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.97);
+  }
+}
+.hud-win-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-bottom: 2px solid var(--hud-line);
+  background: color-mix(in oklab, var(--av-coin) 30%, var(--av-card));
+}
+.hud-win-head h2 {
+  font-size: 21px;
+  line-height: 1.1;
+}
+.hud-win-head p {
+  font-size: 12px;
+  color: var(--av-muted);
+}
+.hud-win-head > div {
+  flex: 1;
+}
+.hud-tabs {
+  display: flex;
+  gap: 6px;
+  margin-left: 8px;
+}
+.hud-tabs a {
+  padding: 3px 12px;
+  border: 2px solid var(--hud-line);
+  border-radius: 99px;
+  background: var(--av-card);
+  font-size: 13px;
+  font-weight: 600;
+}
+.hud-tabs a[aria-current="page"] {
+  background: var(--av-ink);
+  color: var(--av-card);
+}
+.hud-close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+  border: 2px solid var(--hud-line);
+  border-radius: 8px;
+  background: var(--av-stuck);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  box-shadow: 2px 2px 0 var(--hud-line);
+}
+.hud-win-body {
+  flex: 1;
+  overflow: auto;
+  background-color: var(--av-floor);
+  background-image: linear-gradient(var(--av-grid) 1px, transparent 1px), linear-gradient(90deg, var(--av-grid) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+/* El título de cada pantalla ya está en la barra de la ventana. */
+.hud-win-body main > h1,
+.hud-win-body main > header > h1 {
+  display: none;
+}
+.hud-win-body main > header:has(> h1:only-child) {
+  display: none;
+}
+
+/* ── Ficha del agente (a la derecha) ── */
+.hud-agent {
+  position: absolute;
+  z-index: 35;
+  top: 84px;
+  bottom: 106px;
+  right: 10px;
+  width: min(370px, calc(100% - 20px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: hud-slide 0.18s ease-out;
+}
+@keyframes hud-slide {
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+}
+.hud-agent-body {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  font-size: 13px;
+}
+.hud-agent-body h3 {
+  margin-bottom: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--av-muted);
+}
+.hud-figure {
+  position: relative;
+  display: grid;
+  place-items: end center;
+  height: 250px;
+  border: 2px solid var(--hud-line);
+  border-radius: 10px;
+  background:
+    radial-gradient(ellipse 60% 14% at 50% 93%, color-mix(in oklab, var(--av-ink) 22%, transparent), transparent 70%),
+    linear-gradient(color-mix(in oklab, var(--av-work) 16%, var(--av-sunk)) 0 78%, color-mix(in oklab, var(--av-coin) 30%, var(--av-sunk)) 78%);
+  overflow: hidden;
+}
+.hud-figure img {
+  height: 240px;
+  width: auto;
+  max-width: none;
+  image-rendering: pixelated;
+}
+.hud-lvl {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 1px 9px;
+  border: 2px solid var(--hud-line);
+  border-radius: 99px;
+  background: var(--av-coin);
+  color: var(--av-coin-ink);
+}
+.hud-breed {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 1px 8px;
+  border-radius: 99px;
+  background: var(--av-card);
+  border: 2px solid var(--hud-line);
+  font-size: 11px;
+}
+.hud-xp {
+  display: grid;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--av-muted);
+}
+.hud-xp .hud-bar {
+  width: 100%;
+}
+.hud-state {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 15px;
+}
+.hud-state i {
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--hud-line);
+}
+.hud-agent-error {
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--av-stuck) 18%, var(--av-card));
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.hud-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.hud-places {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--av-sunk);
+}
+.hud-places p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+.hud-places p > span {
+  min-width: 110px;
+}
+.hud-chip {
+  min-width: 28px;
+  padding: 1px 6px;
+  border: 2px solid var(--hud-line);
+  border-radius: 6px;
+  background: var(--av-card);
+  color: var(--av-ink);
+  font-weight: 600;
+}
+.hud-chip:hover {
+  background: var(--av-coin);
+  color: var(--av-coin-ink);
+}
+.hud-list {
+  display: grid;
+  gap: 2px;
+  font-size: 12px;
+}
+.hud-split {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hud-split > :first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hud-split > :last-child {
+  flex: none;
+}
+.hud-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.hud-slot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 2px dashed color-mix(in oklab, var(--hud-line) 45%, transparent);
+  border-radius: 7px;
+  font-size: 12px;
+  color: var(--av-muted);
+}
+.hud-slot[data-full] {
+  border-style: solid;
+  border-color: var(--hud-line);
+  background: var(--av-sunk);
+  color: var(--av-ink);
+}
+.hud-slot[data-locked] {
+  opacity: 0.5;
+}
+.hud-slot small {
+  color: var(--av-muted);
+}
+.hud-slot button {
+  background: none;
+  border: 0;
+  color: var(--av-muted);
+  font-size: 15px;
+  line-height: 1;
+}
+.hud-equip {
+  display: grid;
+  gap: 6px;
+  margin: 6px 0;
+}
+.hud-equip li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px;
+  border: 2px solid color-mix(in oklab, var(--hud-line) 25%, transparent);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.hud-equip li > div {
+  flex: 1;
+  min-width: 0;
+}
+.hud-equip p {
+  color: var(--av-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Recorrido de la ficha del negocio ── */
+.hud-timeline {
+  display: grid;
+}
+.hud-timeline li {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: 14px;
+  color: var(--av-muted);
+}
+.hud-timeline li > span {
+  flex: 1;
+}
+.hud-timeline li > small {
+  white-space: nowrap;
+}
+.hud-timeline i {
+  position: relative;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border: 2px solid var(--av-line);
+  border-radius: 50%;
+  background: var(--av-sunk);
+}
+.hud-timeline li + li::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: -9px;
+  height: 18px;
+  border-left: 2px solid var(--av-line);
+}
+.hud-timeline li[data-done] {
+  color: var(--av-ink);
+}
+.hud-timeline li[data-done] i {
+  background: var(--av-work);
+}
+.hud-timeline li[data-now] {
+  color: var(--av-ink);
+  font-weight: 700;
+}
+.hud-timeline li[data-now] i {
+  background: var(--av-coin);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--av-coin) 40%, transparent);
+}
+
+/* Botón especial de Ajustes: una tecla de terminal, discreta. */
+.hud-ascii-key {
+  padding: 3px 10px;
+  border: 1px solid #6f6f6f;
+  background: #050505;
+  color: #e6e6e6;
+  font: 700 13px/1.4 "Cascadia Mono", Consolas, monospace;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+}
+.hud-ascii-key:hover,
+.hud-ascii-key[aria-pressed="true"] {
+  opacity: 1;
+  color: #ffb000;
+  border-color: #ffb000;
+}
+
+/* ── Pantallas chicas: el HUD se achica y las ventanas ocupan todo ── */
+@media (max-width: 1180px) {
+  .hud-clock small,
+  .hud-prod small,
+  .hud-blocks {
+    display: none;
+  }
+  .hud-dock-btn {
+    width: 70px;
+    font-size: 11px;
+  }
+}
+@media (max-width: 760px) {
+  .hud-top {
+    top: 0;
+    left: 0;
+    right: 0;
+    border-radius: 0;
+    border-width: 0 0 2px;
+    gap: 8px;
+    padding: 5px 8px;
+  }
+  .hud-brand .av-title,
+  .hud-clock,
+  .hud-face span:last-child,
+  .hud-prod span {
+    display: none;
+  }
+  .hud-face {
+    min-width: 0;
+    padding: 2px;
+  }
+  .hud-prod {
+    padding: 4px;
+  }
+  .hud-dock {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    max-width: none;
+    border-radius: 0;
+    border-width: 2px 0 0;
+    overflow-x: auto;
+    gap: 5px;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  }
+  .hud-dock-btn {
+    flex: 1 0 62px;
+    width: auto;
+  }
+  .hud-dock-btn svg {
+    width: 28px;
+    height: 28px;
+  }
+  .hud-side {
+    bottom: 96px;
+    left: 6px;
+  }
+  .hud-view {
+    display: none !important;
+  }
+  .hud-win,
+  .hud-win[data-wide],
+  .hud-agent {
+    top: 58px;
+    bottom: 84px;
+    max-height: none;
+    left: 0;
+    right: 0;
+    width: auto;
+    transform: none;
+    border-radius: 0;
+    border-width: 2px 0;
+    animation: none;
+  }
+  .hud-tabs a {
+    padding: 2px 8px;
+    font-size: 12px;
+  }
+  .hud-win-head h2 {
+    display: none;
+  }
+  .hud-notices,
+  .hud-search {
+    top: 60px;
+  }
+}
+
+/* ══════════ Modo ASCII: negro, gris y blanco; ámbar para lo que avisa ══════════ */
+.hud[data-ascii] {
+  --av-ink: #e6e6e6;
+  --av-line: #7a7a7a;
+  --av-floor: #000000;
+  --av-grid: #101010;
+  --av-card: #050505;
+  --av-sunk: #141414;
+  --av-muted: #8f8f8f;
+  --av-coin: #ffb000;
+  --av-coin-ink: #000000;
+  --av-work: #d0d0d0;
+  --av-wait: #ffb000;
+  --av-stuck: #ff5a47;
+  --av-sleep: #7f7f7f;
+  --av-idle: #555555;
+  --av-shadow: 4px 4px 0 #222222;
+  --hud-r: 0px;
+  --color-white: var(--av-card);
+  --color-stone-50: #000000;
+  --color-stone-100: #141414;
+  --color-stone-200: #2a2a2a;
+  --color-stone-300: #444444;
+  --color-stone-400: #777777;
+  --color-stone-500: #8f8f8f;
+  --color-stone-600: #c8c8c8;
+  --color-stone-700: #d8d8d8;
+  --color-stone-800: #e6e6e6;
+  --color-stone-900: #e6e6e6;
+  --color-emerald-50: #141414;
+  --color-emerald-100: #1c1c1c;
+  --color-emerald-500: #d0d0d0;
+  --color-emerald-700: #e6e6e6;
+  --color-emerald-800: #e6e6e6;
+  --color-amber-50: #1a1200;
+  --color-amber-100: #261a00;
+  --color-amber-200: #3a2800;
+  --color-amber-700: #ffb000;
+  --color-amber-800: #ffc23a;
+  --color-amber-900: #ffd270;
+  --color-red-50: #1f0b08;
+  --color-red-500: #ff5a47;
+  --color-red-700: #ff8a7a;
+  --color-red-800: #ffa397;
+  --color-sky-50: #101010;
+  --color-sky-100: #1a1a1a;
+  --color-sky-700: #e6e6e6;
+  --color-sky-800: #ffffff;
+  color-scheme: dark;
+  color: var(--av-ink);
+  font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  font-size: 13px;
+}
+.hud[data-ascii] :is(h1, h2, h3, .av-title, button, input, select, textarea) {
+  font-family: inherit !important;
+}
+.hud[data-ascii] :is(.hud-top, .hud-dock, .hud-pop, .hud-win, .hud-agent, .hud-side > div, .hud-hint, .hud-error) {
+  border-width: 1px;
+}
+.hud[data-ascii] * {
+  border-radius: 0 !important;
+}
+.hud[data-ascii] .hud-canvas {
+  background: #000;
+}
+.hud[data-ascii] .hud-ico svg {
+  display: none;
+}
+.hud[data-ascii] .hud-ti {
+  display: inline;
+  font-size: 15px;
+  padding: 6px 0;
+}
+.hud[data-ascii] .hud-brand .av-title::before {
+  content: "> ";
+  color: var(--av-muted);
+}
+.hud[data-ascii] .hud-brand .av-title::after {
+  content: "_";
+  animation: hud-blink 1s steps(1) infinite;
+}
+@keyframes hud-blink {
+  50% {
+    opacity: 0;
+  }
+}
+.hud[data-ascii] .hud-logo {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  width: auto;
+}
+.hud[data-ascii] .hud-badge {
+  top: -6px;
+  right: -4px;
+  height: auto;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: #050505;
+  color: #ffb000;
+  animation: none;
+}
+.hud[data-ascii] .hud-badge::before {
+  content: "(";
+}
+.hud[data-ascii] .hud-badge::after {
+  content: ")";
+}
+.hud[data-ascii] :is(.hud-dock-btn, .hud-tool, .hud-face, .hud-side button, .hud-prod) {
+  border-width: 1px;
+  border-color: #3a3a3a;
+  background: #0d0d0d;
+  box-shadow: none;
+}
+.hud[data-ascii] :is(.hud-dock-btn, .hud-tool, .hud-face:is(button), .hud-side button):hover,
+.hud[data-ascii] :is(.hud-dock-btn[aria-current="page"], .hud-face[aria-pressed="true"], .hud-side button[aria-pressed="true"], .hud-tool[aria-expanded="true"]) {
+  background: #e6e6e6;
+  color: #000;
+}
+.hud[data-ascii] .hud-dock-btn .av-title {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+}
+.hud[data-ascii] .hud-face-pic img,
+.hud[data-ascii] .hud-figure img {
+  filter: grayscale(1) contrast(1.6) brightness(1.1);
+}
+.hud[data-ascii] .hud-figure {
+  background: repeating-linear-gradient(0deg, #0d0d0d 0 3px, #050505 3px 6px);
+}
+.hud[data-ascii] .hud-win-head {
+  background: #e6e6e6;
+  color: #000;
+  border-bottom-width: 1px;
+}
+.hud[data-ascii] .hud-win-head p {
+  color: #333;
+}
+.hud[data-ascii] .hud-win-head h2 {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 16px;
+}
+.hud[data-ascii] .hud-win-head h2::before {
+  content: "== ";
+}
+.hud[data-ascii] .hud-win-head h2::after {
+  content: " ==";
+}
+.hud[data-ascii] .hud-win-head .hud-ti {
+  color: #000;
+}
+.hud[data-ascii] .hud-tabs a {
+  border-width: 1px;
+  background: #000;
+  color: #e6e6e6;
+}
+.hud[data-ascii] .hud-tabs a[aria-current="page"] {
+  background: #ffb000;
+  color: #000;
+}
+.hud[data-ascii] .hud-close {
+  background: #000;
+  color: #e6e6e6;
+  border-width: 1px;
+  box-shadow: none;
+}
+.hud[data-ascii] .hud-tag,
+.hud[data-ascii] .hud-free {
+  border-width: 1px;
+  background: #000;
+  box-shadow: none;
+}
+.hud[data-ascii] .hud-free {
+  border-width: 1px;
+  background: #000;
+  box-shadow: none;
+}
+.hud[data-ascii] .hud-free {
+  color: #ffb000;
+  border-color: #ffb000;
+}
+.hud[data-ascii] .hud-bar {
+  border-width: 1px;
+}
+.hud[data-ascii] .hud-bar b {
+  background: repeating-linear-gradient(90deg, #e6e6e6 0 4px, transparent 4px 6px) !important;
+}
+.hud[data-ascii] :is(.av-btn, .av-panel, .av-sunk) {
+  border-width: 1px;
+  box-shadow: none;
+}
+.hud[data-ascii] .av-btn-coin {
+  background: #000;
+  color: #ffb000;
+  border-color: #ffb000;
+}
+.hud[data-ascii] .av-btn-coin::before {
+  content: "> ";
+}
+
+/* La ficha del agente se desplaza: sus bloques no se aplastan. */
+.hud-agent-body > * {
+  flex: none;
+}
+.hud-agent .hud-win-head p {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Borrar sótanos: con la contraseña del panel. */
+.hud-delete {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 2px dashed var(--av-sunk);
+  font-size: 13px;
+}
+.hud-delete h4 {
+  font-size: 14px;
+}
+.hud-delete p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hud-confirm {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  margin-top: 4px;
+}
+.hud-confirm label {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  font-size: 12px;
+}
+.hud-confirm input {
+  padding: 5px 8px;
+}
+
+/* Gatos de caracteres (modo ASCII): cara en los botones de arriba, cuerpo entero en la ficha. */
+.hud-acat {
+  margin: 0;
+  font: 9px/10px "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  white-space: pre;
+  color: inherit;
+}
+.hud[data-ascii] .hud-face-pic {
+  width: 58px;
+  height: 34px;
+}
+.hud-acat-body {
+  align-self: center;
+  font-size: 15px;
+  line-height: 17px;
+  color: #e6e6e6;
+}
+
+/* Muñeco 3D de la ficha del agente. */
+.hud-figure-3d {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+.hud-figure-3d:active {
+  cursor: grabbing;
+}
+
+/* Abajo a la izquierda: nombre de la planta y botón de skins. */
+.hud-floor-name {
+  max-width: 140px;
+  margin: 0;
+  padding: 2px 8px;
+  border: 2px solid var(--hud-line);
+  border-radius: 8px;
+  background: var(--av-card);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 2px 2px 0 var(--hud-line);
+}
+.hud-skins {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 46px;
+  border: 2px solid var(--hud-line);
+  border-radius: var(--hud-r);
+  background: var(--av-card);
+  box-shadow: var(--hud-shadow);
+}
+.hud-skins:hover,
+.hud-skins[aria-current="page"] {
+  background: var(--av-coin);
+}
+.hud[data-ascii] :is(.hud-floor-name, .hud-skins) {
+  border-width: 1px;
+  box-shadow: none;
+}
+
+.hud-side {
+  align-items: flex-start;
+}
+
+/* ══════════ Skins: tarjetas para elegir tema ══════════ */
+.skin-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 2px solid color-mix(in oklab, var(--av-line) 35%, transparent);
+  border-radius: 10px;
+  background: var(--av-sunk);
+  color: var(--av-ink);
+  text-align: left;
+  transition: transform 0.1s;
+}
+.skin-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--av-line);
+}
+.skin-card[aria-pressed="true"] {
+  border-color: var(--av-line);
+  background: color-mix(in oklab, var(--av-coin) 35%, var(--av-card));
+  box-shadow: 3px 3px 0 var(--av-line);
+}
+.skin-card b {
+  display: block;
+  font-size: 14px;
+}
+.skin-card small {
+  display: block;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--av-muted);
+}
+.skin-swatch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: none;
+  width: 52px;
+  height: 52px;
+  overflow: hidden;
+  border: 2px solid var(--av-line);
+  border-radius: 8px;
+}
+.skin-swatch i:first-child {
+  grid-column: 1 / 3;
+}
+
+/* ══════════ Temas de la interfaz ══════════
+   Las variables de #panel (globals.css) se recalculan acá: las que dependen de otras (--color-stone-*, --av-line, --av-shadow)
+   hay que volver a declararlas, porque una variable se resuelve donde se declara. */
+.hud:is([data-ui="madera"], [data-ui="papel"], [data-ui="pastel"], [data-ui="bosque"], [data-ui="neon"], [data-ui="arcade"]) {
+  --av-shadow: 3px 3px 0 var(--av-line);
+  --hud-shadow: var(--av-shadow);
+  --hud-line: var(--av-line);
+  --color-white: var(--av-card);
+  --color-stone-50: var(--av-floor);
+  --color-stone-100: var(--av-sunk);
+  --color-stone-500: var(--av-muted);
+  --color-stone-900: var(--av-ink);
+  --color-emerald-500: var(--av-work);
+  --color-red-500: var(--av-stuck);
+  color: var(--av-ink);
+}
+/* Temas claros: la paleta "stone" va de claro a oscuro como siempre. */
+.hud:is([data-ui="madera"], [data-ui="papel"], [data-ui="pastel"]) {
+  --color-stone-200: color-mix(in oklab, var(--av-ink) 18%, var(--av-card));
+  --color-stone-300: color-mix(in oklab, var(--av-ink) 32%, var(--av-card));
+  --color-stone-400: color-mix(in oklab, var(--av-ink) 50%, var(--av-card));
+  --color-stone-600: color-mix(in oklab, var(--av-ink) 80%, var(--av-card));
+  --color-stone-700: color-mix(in oklab, var(--av-ink) 88%, var(--av-card));
+  --color-stone-800: color-mix(in oklab, var(--av-ink) 94%, var(--av-card));
+  color-scheme: light;
+}
+/* Temas oscuros: los colores de estado de las pantallas viejas (verdes, ámbar, rojos, celestes) pasan a su versión de noche. */
+.hud:is([data-ui="bosque"], [data-ui="neon"], [data-ui="arcade"]) {
+  --color-stone-200: color-mix(in oklab, var(--av-ink) 22%, var(--av-card));
+  --color-stone-300: color-mix(in oklab, var(--av-ink) 34%, var(--av-card));
+  --color-stone-400: color-mix(in oklab, var(--av-ink) 52%, var(--av-card));
+  --color-stone-600: color-mix(in oklab, var(--av-ink) 82%, var(--av-card));
+  --color-stone-700: color-mix(in oklab, var(--av-ink) 88%, var(--av-card));
+  --color-stone-800: color-mix(in oklab, var(--av-ink) 94%, var(--av-card));
+  --color-emerald-50: color-mix(in oklab, var(--av-work) 18%, var(--av-card));
+  --color-emerald-100: color-mix(in oklab, var(--av-work) 28%, var(--av-card));
+  --color-emerald-700: color-mix(in oklab, var(--av-work) 60%, white);
+  --color-emerald-800: color-mix(in oklab, var(--av-work) 45%, white);
+  --color-amber-50: color-mix(in oklab, var(--av-wait) 16%, var(--av-card));
+  --color-amber-100: color-mix(in oklab, var(--av-wait) 26%, var(--av-card));
+  --color-amber-200: color-mix(in oklab, var(--av-wait) 36%, var(--av-card));
+  --color-amber-700: color-mix(in oklab, var(--av-wait) 70%, white);
+  --color-amber-800: color-mix(in oklab, var(--av-wait) 55%, white);
+  --color-amber-900: color-mix(in oklab, var(--av-wait) 40%, white);
+  --color-red-50: color-mix(in oklab, var(--av-stuck) 16%, var(--av-card));
+  --color-red-700: color-mix(in oklab, var(--av-stuck) 60%, white);
+  --color-red-800: color-mix(in oklab, var(--av-stuck) 45%, white);
+  --color-sky-50: color-mix(in oklab, #4d8fe0 16%, var(--av-card));
+  --color-sky-100: color-mix(in oklab, #4d8fe0 26%, var(--av-card));
+  --color-sky-700: color-mix(in oklab, #4d8fe0 55%, white);
+  --color-sky-800: color-mix(in oklab, #4d8fe0 40%, white);
+  color-scheme: dark;
+}
+
+/* Cabaña de madera: pergamino, vetas, tinta marrón y títulos de cuento. */
+.hud[data-ui="madera"] {
+  --av-ink: #3a261b;
+  --av-line: #3a261b;
+  --av-floor: #ecd9b4;
+  --av-grid: #e2cca2;
+  --av-card: #fff8ea;
+  --av-sunk: #f3e4c6;
+  --av-muted: #7a5e48;
+  --av-coin: #f2b33a;
+  --av-coin-ink: #3a261b;
+  --av-work: #6f9a4a;
+  --av-wait: #e8a849;
+  --av-stuck: #d9694a;
+  --hud-r: 14px;
+  --font-pixel: Georgia, "Times New Roman", serif;
+}
+.hud[data-ui="madera"] :is(.hud-top, .hud-dock, .hud-side > div) {
+  background: repeating-linear-gradient(180deg, #8a5a3b 0 7px, #80533a 7px 9px, #8f5f3f 9px 15px);
+  color: #fdf4e1;
+  --av-muted: #ead5ae;
+}
+.hud[data-ui="madera"] :is(.hud-dock-btn, .hud-tool, .hud-face, .hud-side button, .hud-prod) {
+  background: #fdf4e1;
+  color: #3a261b;
+}
+.hud[data-ui="madera"] .hud-win-head {
+  background: repeating-linear-gradient(180deg, #8a5a3b 0 7px, #80533a 7px 9px, #8f5f3f 9px 15px);
+  color: #fdf4e1;
+}
+
+/* Cuaderno: hoja cuadriculada, tinta azul, resaltador y bordes finitos. */
+.hud[data-ui="papel"] {
+  --av-ink: #1f3a6e;
+  --av-line: #1f3a6e;
+  --av-floor: #fbf8ef;
+  --av-grid: #d8e4f2;
+  --av-card: #fffdf7;
+  --av-sunk: #f2efe3;
+  --av-muted: #5a6f94;
+  --av-coin: #ffe45c;
+  --av-coin-ink: #1f3a6e;
+  --av-work: #3a9a6a;
+  --av-wait: #e9a23b;
+  --av-stuck: #d9463b;
+  --av-shadow: 2px 2px 0 #1f3a6e;
+  --hud-r: 3px;
+  --font-pixel: "Courier New", Courier, monospace;
+}
+.hud[data-ui="papel"] .hud-win-head {
+  background: linear-gradient(transparent 70%, #ffe45c 70% 92%, transparent 92%), var(--av-card);
+  border-bottom-style: dashed;
+}
+.hud[data-ui="papel"] .hud-win-body {
+  background-size: 24px 24px;
+}
+
+/* Caramelo: lavanda, rosa y menta, todo bien redondo y con sombra suave. */
+.hud[data-ui="pastel"] {
+  --av-ink: #4a3a6a;
+  --av-line: #6a55a0;
+  --av-floor: #f4ecfc;
+  --av-grid: #ebdff8;
+  --av-card: #ffffff;
+  --av-sunk: #f6effd;
+  --av-muted: #8a7aa8;
+  --av-coin: #ffb3d1;
+  --av-coin-ink: #4a3a6a;
+  --av-work: #5fc4a0;
+  --av-wait: #ffc46b;
+  --av-stuck: #ff7a8a;
+  --av-shadow: 0 4px 0 #d9c9f2;
+  --hud-r: 20px;
+}
+
+/* Bosque de noche: musgo oscuro, lima y bordes casi negros. */
+.hud[data-ui="bosque"] {
+  --av-ink: #eef3e6;
+  --av-line: #0e1611;
+  --av-floor: #17211c;
+  --av-grid: #1d2a23;
+  --av-card: #2a3a31;
+  --av-sunk: #223029;
+  --av-muted: #a9bba0;
+  --av-coin: #c9d65a;
+  --av-coin-ink: #17211c;
+  --av-work: #7fc46a;
+  --av-wait: #e8b84a;
+  --av-stuck: #e5735b;
+  --hud-r: 12px;
+}
+/* Los bordes casi negros desaparecen sobre el musgo: el contorno de los íconos va claro. */
+.hud[data-ui="bosque"] {
+  --ico-line: color-mix(in oklab, var(--av-ink) 72%, var(--av-card));
+}
+
+/* Neón: violeta casi negro y bordes que brillan. */
+.hud[data-ui="neon"] {
+  --av-ink: #f1ecff;
+  --av-line: #ff5fa2;
+  --av-floor: #0d0a1a;
+  --av-grid: #17122b;
+  --av-card: #1a1630;
+  --av-sunk: #231d3f;
+  --av-muted: #b3a9e0;
+  --av-coin: #7df0d0;
+  --av-coin-ink: #0d0a1a;
+  --av-work: #7df0d0;
+  --av-wait: #ffd166;
+  --av-stuck: #ff5f7a;
+  --av-shadow: 0 0 0 1px #ff5fa2, 0 0 14px rgba(255, 95, 162, 0.45);
+  --hud-r: 10px;
+}
+.hud[data-ui="neon"] :is(h1, h2, .av-title) {
+  text-shadow: 0 0 8px rgba(125, 240, 208, 0.55);
+}
+
+/* Arcade: negro, azul eléctrico y rojo; esquinas rectas y sombras gruesas. */
+.hud[data-ui="arcade"] {
+  --av-ink: #f4f4ff;
+  --av-line: #2f6bff;
+  --av-floor: #07070f;
+  --av-grid: #10101f;
+  --av-card: #0d0d1a;
+  --av-sunk: #15152a;
+  --av-muted: #9aa3d6;
+  --av-coin: #ff3b3b;
+  --av-coin-ink: #ffffff;
+  --av-work: #3bff8f;
+  --av-wait: #ffd23b;
+  --av-stuck: #ff3b3b;
+  --av-shadow: 4px 4px 0 #2f6bff;
+  --hud-r: 0px;
+}
+.hud[data-ui="arcade"] * {
+  border-radius: 0 !important;
+}
+
+/* ══════════ Ventanas que se mueven y se agrandan ══════════ */
+.hud-float {
+  animation: hud-fade 0.16s ease-out;
+}
+@keyframes hud-fade {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+.hud-float [data-drag] {
+  cursor: move;
+  user-select: none;
+}
+.hud-float [data-drag] :is(button, a, input) {
+  cursor: pointer;
+}
+/* Esquinas para agrandar: invisibles hasta que pasás el mouse cerca. */
+.hud-grip {
+  position: absolute;
+  z-index: 5;
+  width: 18px;
+  height: 18px;
+}
+.hud-grip[data-c="nw"] {
+  top: -4px;
+  left: -4px;
+  cursor: nwse-resize;
+}
+.hud-grip[data-c="se"] {
+  right: -4px;
+  bottom: -4px;
+  cursor: nwse-resize;
+}
+.hud-grip[data-c="ne"] {
+  top: -4px;
+  right: -4px;
+  cursor: nesw-resize;
+}
+.hud-grip[data-c="sw"] {
+  bottom: -4px;
+  left: -4px;
+  cursor: nesw-resize;
+}
+.hud-grip::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 0 solid var(--hud-line);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.hud-float:hover .hud-grip::after {
+  opacity: 0.55;
+}
+.hud-grip[data-c="se"]::after {
+  border-width: 0 3px 3px 0;
+}
+.hud-grip[data-c="nw"]::after {
+  border-width: 3px 0 0 3px;
+}
+.hud-grip[data-c="ne"]::after {
+  border-width: 3px 3px 0 0;
+}
+.hud-grip[data-c="sw"]::after {
+  border-width: 0 0 3px 3px;
+}
+/* Barra de arriba de los desplegables. */
+.hud-pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -10px -10px 4px;
+  padding: 6px 8px 6px 12px;
+  border-bottom: 2px solid var(--hud-line);
+  background: color-mix(in oklab, var(--av-coin) 30%, var(--av-card));
+  border-radius: calc(var(--hud-r) - 2px) calc(var(--hud-r) - 2px) 0 0;
+}
+.hud-x {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--hud-line);
+  border-radius: 7px;
+  background: var(--av-card);
+  color: var(--av-ink);
+  font-size: 17px;
+  line-height: 1;
+}
+.hud-x:hover {
+  background: var(--av-stuck);
+  color: #fff;
+}
+/* La ficha del agente y la ventana principal: el contenido se acomoda al alto que les des. */
+.hud-win.hud-float,
+.hud-agent.hud-float {
+  min-height: 0;
+}
+
+body.hud-dragging {
+  user-select: none;
+}
+
+/* Las ventanas flotan sobre la casa pero debajo de las barras: el HUD siempre se puede usar. */
+.hud-win.hud-float,
+.hud-agent.hud-float {
+  z-index: 19;
+}
+.hud-side {
+  z-index: 21;
+}
